@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<title>Smart-Search Floor Manager</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f2f0ff;--card:rgba(255,255,255,.78);--ink:#15122b;--mut:#6a6788;--line:rgba(60,50,130,.15);--acc:#6c47ff;--acc2:#00a99a;--free:#0b8f63;--freebg:rgba(16,185,129,.14);--busy:#c62d3f;--busybg:rgba(239,68,68,.12);--chip:rgba(108,71,255,.10);--aur1:rgba(108,71,255,.22);--aur2:rgba(0,200,180,.18);--fnt:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0b1a;--card:rgba(24,26,54,.68);--ink:#ecebff;--mut:#9b9dc6;--line:rgba(140,150,255,.18);--acc:#9b83ff;--acc2:#2ee6c8;--free:#3ef0b0;--freebg:rgba(46,230,200,.12);--busy:#ff7a8a;--busybg:rgba(255,90,110,.14);--chip:rgba(155,131,255,.15);--aur1:rgba(120,90,255,.30);--aur2:rgba(20,220,190,.16)}}
+:root[data-theme="dark"]{--bg:#0a0b1a;--card:rgba(24,26,54,.68);--ink:#ecebff;--mut:#9b9dc6;--line:rgba(140,150,255,.18);--acc:#9b83ff;--acc2:#2ee6c8;--free:#3ef0b0;--freebg:rgba(46,230,200,.12);--busy:#ff7a8a;--busybg:rgba(255,90,110,.14);--chip:rgba(155,131,255,.15);--aur1:rgba(120,90,255,.30);--aur2:rgba(20,220,190,.16)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--fnt);min-height:100vh}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(60% 45% at 12% 0%,var(--aur1),transparent 70%),radial-gradient(50% 40% at 95% 20%,var(--aur2),transparent 70%),radial-gradient(45% 35% at 50% 100%,var(--aur1),transparent 70%)}
+main{max-width:1080px;margin:0 auto;padding:22px 14px 50px;position:relative}
+/* hero */
+.hero{display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;margin-bottom:18px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--acc2);background:var(--chip);border:1px solid var(--line);padding:5px 12px;border-radius:99px}
+.live{width:8px;height:8px;border-radius:50%;background:var(--free);box-shadow:0 0 0 0 var(--free);animation:ping 1.8s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+h1{font-size:clamp(28px,6vw,46px);line-height:1.05;margin:12px 0 6px;letter-spacing:-.03em;font-weight:700}
+h1 b{background:linear-gradient(95deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mut);margin:0;font-size:13.5px;max-width:520px}
+.stats{display:flex;gap:10px}.stat{min-width:92px;padding:10px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line);backdrop-filter:blur(10px)}
+.stat strong{display:block;font:700 28px/1.1 var(--mono)}.stat span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em}
+.stat.g strong{color:var(--free)}.stat.a strong{color:#e0a100}.stat.r strong{color:var(--busy)}
+/* panels */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:16px;backdrop-filter:blur(14px);box-shadow:0 10px 40px -18px rgba(40,20,120,.35);animation:rise .5s both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.ph{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:17px;letter-spacing:-.01em}
+.ph i{font:700 11px var(--mono);font-style:normal;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2));padding:4px 8px;border-radius:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label{font-size:11px;color:var(--mut);display:flex;flex-direction:column;gap:4px;text-transform:uppercase;letter-spacing:.06em}
+select,input,button{font:inherit;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:9px 12px;outline:0;transition:.18s}
+select:focus,input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--chip)}
+button{cursor:pointer;background:linear-gradient(135deg,var(--acc),#4f8dff);color:#fff;border:0;font-weight:600;box-shadow:0 6px 18px -6px var(--acc)}
+button:hover{transform:translateY(-2px)}button:active{transform:none}button:disabled{opacity:.6}
+button.ghost{background:var(--chip);color:var(--ink);border:1px solid var(--line);box-shadow:none;font-weight:500}
+input[type=range]{padding:0;accent-color:var(--acc);background:none;border:0;width:150px}
+.ai{display:flex;gap:8px;flex-wrap:wrap;padding:6px;border-radius:16px;background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(120deg,var(--acc),var(--acc2),var(--acc)) border-box;border:2px solid transparent;background-size:100% 100%,300% 100%;animation:sweep 6s linear infinite}
+@keyframes sweep{to{background-position:0 0,300% 0}}
+#q{flex:1;min-width:220px;border:0;background:transparent;font-size:15px}#q:focus{box-shadow:none}
+.ex{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.ex button{font-size:12px;padding:5px 11px;border-radius:99px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px}.chip{background:var(--chip);border:1px solid var(--line);border-radius:99px;padding:3px 11px;font:500 12px var(--mono)}
+/* floors & cards */
+.floor{margin-top:16px}.floor h3{margin:0 0 8px;font-size:13px;display:flex;justify-content:space-between;text-transform:uppercase;letter-spacing:.09em;color:var(--acc)}.floor h3 span{color:var(--mut);font-weight:500;letter-spacing:0;text-transform:none;font-family:var(--mono)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.room{border:1px solid var(--line);border-left:4px solid var(--busy);border-radius:14px;padding:11px 12px;background:var(--card);cursor:pointer;transition:.2s;animation:rise .4s both}
+.room:has(.pill.free){border-left-color:var(--free)}.room:hover{transform:translateY(-3px);box-shadow:0 12px 26px -14px var(--acc)}
+.room b{font:700 17px var(--mono)}.tags{color:var(--mut);font-size:12px;margin:2px 0 7px}
+.pill{display:inline-block;font:700 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:99px}
+.free{background:var(--freebg);color:var(--free)}.busy{background:var(--busybg);color:var(--busy)}
+.note{font-size:12px;color:var(--mut);margin-top:3px}.msg{margin:8px 0;font-weight:600}
+.legend{font-size:12px;color:var(--mut);margin-top:22px;text-align:center}
+/* 3D map */
+.key{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin:0 0 6px}.key i.k{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.k.f,.tile.f{background:linear-gradient(145deg,#22e0aa,#0fa77c)}.k.b,.tile.b{background:linear-gradient(145deg,#ff6b7d,#d23b52)}.k.w,.tile.w{background:linear-gradient(145deg,#ffc83d,#e39a00)}.k.hl{border:2px dashed #ffd43b}
+.mapwrap{display:flex;gap:16px;flex-wrap:wrap}.stage{flex:1 1 340px;overflow:hidden;border-radius:16px;background:radial-gradient(70% 60% at 50% 40%,var(--chip),transparent)}
+#bldg{--rz:-30deg;padding:6px 0}
+.fl{position:relative;height:74px;perspective:800px;display:flex;justify-content:center;align-items:center}
+.plate{display:flex;gap:8px;padding:10px;background:var(--chip);border:2px solid var(--line);border-radius:10px;transform:rotateX(58deg) rotateZ(var(--rz));box-shadow:0 7px 0 rgba(0,0,0,.22),0 18px 30px -6px rgba(0,0,0,.25);transition:transform .4s}
+.fl em{position:absolute;left:6px;top:50%;transform:translateY(-50%);font:600 10px var(--mono);color:var(--mut);font-style:normal;text-transform:uppercase;letter-spacing:.06em}
+.tile{width:60px;height:52px;border-radius:7px;color:#fff;font:700 12px var(--mono);display:flex;align-items:center;justify-content:center;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,.35);transition:.2s}
+.tile.f{box-shadow:0 5px 0 #0a6e52,0 0 20px rgba(34,224,170,.55);animation:glow 2.6s ease-in-out infinite}
+.tile.b{box-shadow:0 5px 0 #8f2233}.tile.w{box-shadow:0 5px 0 #96650a,0 0 16px rgba(255,200,61,.5)}
+@keyframes glow{50%{filter:brightness(1.18)}}
+.tile:hover{transform:translateZ(14px) translateY(-4px)}
+.tile.sel{outline:3px solid #fff;outline-offset:2px}.tile.hl{outline:3px dashed #ffd43b;outline-offset:2px}
+.detail{flex:1 1 250px;margin:0;animation:none;background:linear-gradient(160deg,var(--chip),var(--card))}
+.cd{font:700 40px/1.15 var(--mono);margin:4px 0 14px;background:linear-gradient(95deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.02em}
+.cd.warn{background:linear-gradient(95deg,#ffb020,#ff6b3d);-webkit-background-clip:text;background-clip:text}
+.btn{display:block;text-align:center;text-decoration:none;background:linear-gradient(135deg,#25d366,#12b886);color:#03260f;font-weight:700;padding:12px;border-radius:14px;margin:10px 0;box-shadow:0 10px 24px -10px #25d366;transition:.2s}.btn:hover{transform:translateY(-2px)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><main>
+<header class="hero"><div><span class="eyebrow"><span class="live"></span><span id="hclock">live</span></span>
+<h1>Smart-Search <b>Floor Manager</b></h1>
+<p class="sub">Find, see and claim empty rooms in seconds — built from the 9 odd-semester 2026-27 timetables (II–IV year · BME / ECE / ECE-DS).</p></div>
+<div class="stats" id="stats"></div></header>
+
+<section class="panel">
+  <h2 class="ph"><i>01</i>Ask the AI room finder</h2>
+  <div class="ai"><input id="q" placeholder='Try: "I need an AC room on the ground floor for me and my team for the next 2 hours"' aria-label="Ask for a room">
+  <button id="ask">Find rooms ✨</button></div>
+  <div class="ex" id="ex"></div>
+  <div id="ai-out"></div>
+</section>
+
+<section class="panel" id="mapsec">
+  <div class="row" style="justify-content:space-between"><h2 class="ph" style="margin:0"><i>02</i>3D building map</h2><label>Rotate<input type="range" id="rz" min="-80" max="20" value="-30"></label></div>
+  <div class="key"><span><i class="k f"></i>Free</span><span><i class="k w"></i>Class starts within 15 min</span><span><i class="k b"></i>Occupied</span><span><i class="k hl"></i>AI match</span></div>
+  <div class="mapwrap"><div class="stage"><div id="bldg"></div></div><div class="detail panel" id="detail"></div></div>
+</section>
+
+<section class="panel">
+  <h2 class="ph"><i>03</i>Floor-by-floor grid</h2>
+  <div class="row">
+    <label>Day<select id="day"></select></label>
+    <label>Time<input type="time" id="time"></label>
+    <button class="ghost" id="now">Use current time</button>
+    <label>Air-con<select id="fac"><option value="">Any</option><option value="1">AC</option><option value="0">Non-AC</option></select></label>
+    <label>Type<select id="ftype"><option value="">Any</option><option value="classroom">Classroom</option><option value="lab">Lab</option><option value="hall">Seminar hall</option></select></label>
+    <label>Free for at least<select id="fmin"><option value="0">Any time</option><option value="30">30 min</option><option value="60">1 hour</option><option value="120">2 hours</option><option value="180">3 hours</option></select></label>
+  </div>
+  <div class="msg" id="summary"></div>
+  <div id="floors"></div>
+</section>
+<p class="legend">Classes run 09:00–16:50 Mon–Fri; lunch 12:30–13:20 and tea breaks are treated as free. Weekends have no scheduled classes. Room type, capacity and AC status are <b>not in the timetables</b> – they're assumptions in the <code>META</code> table in this page's code and can be edited.</p>
+</main>
+<script>
+/* ---------- DATA ---------- */
+const PT=[[540,590],[590,640],[650,700],[700,750],[750,800],[800,850],[850,900],[910,960],[960,1010]];
+const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+// cells: 9 periods separated by |  ; h = section's home room ; else room(s) comma-separated ; empty = no class
+const SEC=[
+{n:'II BME',h:'602',d:['h|h|h|h||107,309|107,309||','h|h|h|h||TB-106|TB-106||','h|h|h|||TB-106|602||','h|h|h|h||||107,309|107,309','h|h|h|h||||602|602']},
+{n:'II ECE-DS A',h:'416',d:['h|h|h|h||602|602|309,107|309,107','h|h|h|h||602||TB-106|TB-106','h|h|h|h|||TB-106||','h|h|h|h||309,107|309,107||','h|h|h|h|||||']},
+{n:'II ECE-DS B',h:'411',d:['||309,107|309,107||h|h|h|h','309,107|309,107||||h|h|h|h','401|||||h|h|h|h','401|401|TB-106|TB-106||h|h|h|h','TB-106|||||h|h|h|h']},
+{n:'III BME',h:'211',d:['625|625|107|107||h|h|h|h','108|108|625|||h|h|h|h','|||||h|h|h|h','|||108||h|h|h|h','108|||||h|h|h|h']},
+{n:'III ECE-A',h:'518',d:['h|h|h|h||625|625||','h|h|h|h|||625||','h|h|h|h||||108,309|108,309','h|h|h|h|||||','h|h|h|h||108,309|108,309||']},
+{n:'III ECE-B',h:'518',d:['108,309|108,309||||h|h|h|h','625|625||||h|h|h|h','625|||||h|h|h|h','108,309|108,309||||h|h|h|h','|||||h|h|h|h']},
+{n:'III ECE-DS',h:'519',d:['h|h|h|h|||||','h|h|h|h||108,107|108,107||','h|h|h|h||||625|625','h|h|h|h|||||','h|h|h|h||625||108,107|108,107']},
+{n:'IV ECE-A',h:'225',d:['h||h|h|||||','h|h|h|h|||||','h|108|h|h|||||','h|h|h|h|||||','h|h|h|h|||||']},
+{n:'IV ECE-B',h:'227',d:['h|h|h|h|||||','h|h|h|h|||||','h|h|h|h|||||','h|h|108|h|||||','h|h|h||||||']}
+];
+// ASSUMED metadata (not in timetables) – edit freely
+const META={'TB-106':{ac:1,cap:120,type:'hall'},'107':{ac:1,cap:40,type:'lab'},'108':{ac:1,cap:40,type:'lab'},'309':{ac:1,cap:40,type:'lab'},
+'602':{ac:1,cap:60,type:'classroom'},'625':{ac:1,cap:60,type:'classroom'},'401':{ac:1,cap:60,type:'classroom'},
+'416':{ac:0,cap:60,type:'classroom'},'411':{ac:0,cap:60,type:'classroom'},'211':{ac:0,cap:60,type:'classroom'},
+'518':{ac:0,cap:60,type:'classroom'},'519':{ac:0,cap:60,type:'classroom'},'225':{ac:0,cap:60,type:'classroom'},'227':{ac:0,cap:60,type:'classroom'}};
+const FLOORS=['Ground floor','1st floor','2nd floor','3rd floor','4th floor','5th floor'];
+const floorOf=id=>parseInt(id.replace(/\D/g,'')[0])-1;
+
+/* ---------- ENGINE ---------- */
+const BUSY={};Object.keys(META).forEach(r=>BUSY[r]=[[],[],[],[],[]]);
+SEC.forEach(s=>s.d.forEach((row,di)=>{const c=row.split('|');
+  for(let p=0;p<9;p++){const v=c[p]||'';if(!v)continue;
+    (v==='h'?[s.h]:v.split(',')).forEach(r=>BUSY[r][di].push({a:PT[p][0],b:PT[p][1],who:s.n}));}}));
+Object.values(BUSY).forEach(days=>days.forEach((L,i)=>{L.sort((x,y)=>x.a-y.a);const m=[];
+  L.forEach(x=>{const l=m[m.length-1];if(l&&x.a-l.b<=10){l.b=Math.max(l.b,x.b);if(!l.who.includes(x.who))l.who+=', '+x.who}else m.push({...x})});days[i]=m}));
+
+function info(room,jsDay,s,e){
+  const di=jsDay-1;if(di<0||di>4)return{busy:false,until:Infinity,weekend:true};
+  for(const x of BUSY[room][di]){
+    if(x.b<=s)continue;
+    if(x.a<=s)return{busy:true,who:x.who,from:x.b,until:0};
+    return{busy:false,until:x.a,who:x.who};
+  }
+  return{busy:false,until:Infinity};
+}
+const fmt=m=>{if(m===Infinity)return'end of day';const h=Math.floor(m/60),mm=String(m%60).padStart(2,'0');return`${(h+11)%12+1}:${mm} ${h<12?'AM':'PM'}`};
+const hm=s=>{const[a,b]=s.split(':').map(Number);return a*60+b};
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+const st={day:0,t:0,sel:null,hl:new Set(),claimed:null};
+DN.forEach((d,i)=>{const o=document.createElement('option');o.value=i;o.textContent=d;$('day').append(o)});
+let wall0=Date.now(),baseSec=0;
+const clock=()=>baseSec+(Date.now()-wall0)/1000;
+function setBase(x){baseSec=x;wall0=Date.now()}
+const p2=n=>String(n).padStart(2,'0');
+function setNow(){const n=new Date();st.day=n.getDay();setBase(n.getHours()*3600+n.getMinutes()*60+n.getSeconds());st.t=Math.floor(baseSec/60);$('day').value=st.day;$('time').value=p2(n.getHours())+':'+p2(n.getMinutes())}
+const rn=id=>/^\d/.test(id)?'IST '+id:id;
+function renderAll(){renderGrid();renderMap();renderDetail();renderStats()}
+function renderStats(){let f=0,w=0,b=0;Object.keys(META).forEach(id=>{const i=info(id,st.day,st.t,st.t);if(i.busy)b++;else if(i.until-st.t<=15)w++;else f++});
+  $('stats').innerHTML=`<div class="stat g"><strong>${f}</strong><span>Free</span></div><div class="stat a"><strong>${w}</strong><span>Ending soon</span></div><div class="stat r"><strong>${b}</strong><span>Occupied</span></div>`}
+/* 3D map */
+function renderMap(){let h='';
+  for(let f=5;f>=0;f--){const ids=Object.keys(META).filter(id=>floorOf(id)===f).sort();if(!ids.length)continue;
+    h+=`<div class="fl"><em>${FLOORS[f]}</em><div class="plate">${ids.map(id=>{const i=info(id,st.day,st.t,st.t);
+      const c=i.busy?'b':(i.until-st.t<=15?'w':'f');
+      return`<div class="tile ${c}${st.sel===id?' sel':''}${st.hl.has(id)?' hl':''}" data-id="${id}">${id}</div>`}).join('')}</div></div>`}
+  $('bldg').innerHTML=h}
+/* countdown + squad */
+function cdText(x){x=Math.max(0,Math.floor(x));return`${p2(Math.floor(x/3600))}:${p2(Math.floor(x%3600/60))}:${p2(x%60)}`}
+function updateCd(){const c=$('cd');if(!c||!st.sel)return;const i=info(st.sel,st.day,st.t,st.t);
+  const tg=i.busy?i.from:i.until;if(tg===Infinity){c.textContent='—';return}
+  const r=tg*60-clock();c.textContent=cdText(r);c.className='cd'+(!i.busy&&r<900?' warn':'')}
+function renderDetail(){
+  const el=$('detail'),id=st.sel;
+  if(!id){el.innerHTML='<p class="note">👆 Tap any room on the map (or any room card) to see its live countdown, claim it and call your squad.</p>';return}
+  const i=info(id,st.day,st.t,st.t);
+  let h=`<h3 style="margin:0">${rn(id)}</h3><div class="tags">${FLOORS[floorOf(id)]} · ${tags(id)}</div>`;
+  if(i.busy)h+=`<span class="pill busy">Occupied</span> <span class="note">${i.who}</span><div class="note" style="margin-top:8px">Room frees up in</div>`;
+  else if(i.until===Infinity)h+=`<span class="pill free">Free</span><div class="note" style="margin-top:8px">${i.weekend?'No classes scheduled today':'No more classes today'}</div>`;
+  else h+=`<span class="pill free">Free</span><div class="note" style="margin-top:8px">Next class (${i.who}) starts in</div>`;
+  h+='<div id="cd" class="cd"></div>';
+  if(!i.busy){
+    if(st.claimed===id){
+      const u=i.until===Infinity?'free for the rest of the day':'free until '+fmt(i.until);
+      const msg=`📍 Heading to ${rn(id)} (${FLOORS[floorOf(id)]}). It's ${u}. Come fast!`;
+      h+=`<div class="msg">✅ Room claimed</div><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">📣 Call the Squad on WhatsApp</a><div class="note">${msg}</div><p><button class="ghost" id="rel">Release room</button></p>`;
+    }else h+='<button id="claim">Claim this room</button>';
+  }
+  el.innerHTML=h;
+  if($('claim'))$('claim').onclick=()=>{st.claimed=id;renderDetail()};
+  if($('rel'))$('rel').onclick=()=>{st.claimed=null;renderDetail()};
+  updateCd()}
+function tick(){$('hclock').textContent=DN[st.day]+' · '+cdText(clock()%86400)+' · live';const t=Math.floor(clock()/60)%1440;if(t!==st.t){st.t=t;$('time').value=p2(Math.floor(t/60))+':'+p2(t%60);renderAll()}updateCd()}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-id]');if(!t)return;st.sel=t.dataset.id;renderMap();renderDetail();
+  if(t.classList.contains('room'))$('mapsec').scrollIntoView({behavior:'smooth',block:'nearest'})});
+$('rz').oninput=e=>$('bldg').style.setProperty('--rz',e.target.value+'deg');
+function tags(id){const m=META[id];return`${m.ac?'AC':'Non-AC'} · ${m.type==='hall'?'Seminar hall':m.type[0].toUpperCase()+m.type.slice(1)} · ~${m.cap} seats`}
+function card(id,i,extra){
+  const pill=i.busy?`<span class="pill busy">Occupied</span> <span class="note">${i.who}</span><div class="note">Free from ${fmt(i.from)}</div>`
+    :`<span class="pill free">Free</span> <span class="note">until ${i.weekend?'—no classes':fmt(i.until)}</span>`;
+  return`<div class="room" data-id="${id}"><b>${id}</b><div class="tags">${tags(id)}</div>${pill}${extra||''}</div>`}
+function renderFloors(el,list,extraFn){
+  if(!list.length){el.innerHTML='<p class="note">No rooms match.</p>';return}
+  let h='';FLOORS.forEach((f,fi)=>{const L=list.filter(x=>floorOf(x.id)===fi);if(!L.length)return;
+    h+=`<div class="floor"><h3>${f}<span>${L.filter(x=>!x.i.busy).length} free / ${L.length}</span></h3><div class="grid">${L.map(x=>card(x.id,x.i,extraFn&&extraFn(x))).join('')}</div></div>`});
+  el.innerHTML=h}
+function renderGrid(){
+  const ac=$('fac').value,ty=$('ftype').value,mn=+$('fmin').value;
+  const list=Object.keys(META).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).filter(id=>{const m=META[id];
+    return(ac===''||m.ac==+ac)&&(!ty||m.type===ty)}).map(id=>({id,i:info(id,st.day,st.t,st.t)}))
+    .filter(x=>mn===0||(!x.i.busy&&x.i.until-st.t>=mn));
+  const nf=list.filter(x=>!x.i.busy).length;
+  $('summary').textContent=`${DN[st.day]} ${fmt(st.t)} — ${nf} of ${list.length} rooms free`;
+  renderFloors($('floors'),list)}
+function userTime(){st.day=+$('day').value;if($('time').value){st.t=hm($('time').value);setBase(st.t*60)}renderAll()}
+['day','time'].forEach(id=>$(id).addEventListener('input',userTime));
+['fac','ftype','fmin'].forEach(id=>$(id).addEventListener('input',renderGrid));
+$('now').onclick=()=>{setNow();renderAll()};
+
+/* ---------- AI ROOM FINDER ---------- */
+function localParse(q){
+  const s=q.toLowerCase(),p={ac:null,floor:null,type:null,minCapacity:null,durationMin:60,startOffsetMin:0,startTime:null,day:null};
+  if(/non[\s-]?ac|without ac|no ac|non air/.test(s))p.ac=false;else if(/\bac\b|air[\s-]?con/.test(s))p.ac=true;
+  if(/ground/.test(s))p.floor=0;else{const m=s.match(/(\d)(?:st|nd|rd|th)?\s*floor/)||s.match(/floor\s*(\d)/);if(m)p.floor=+m[1];
+    else{const w={first:1,second:2,third:3,fourth:4,fifth:5}; for(const k in w)if(s.includes(k+' floor'))p.floor=w[k]}}
+  if(/\blab/.test(s))p.type='lab';else if(/seminar|hall|auditorium/.test(s))p.type='hall';else if(/class ?room/.test(s))p.type='classroom';
+  let m=s.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b/);if(m)p.durationMin=Math.round(m[1]*60);
+  else if(m=s.match(/(\d+)\s*(?:minutes?|mins?)/))p.durationMin=+m[1];
+  else if(/half an hour|half hour/.test(s))p.durationMin=30;
+  if(m=s.match(/(\d+)\s*(?:people|students|members|persons|of us)/))p.minCapacity=+m[1];
+  if(m=s.match(/\b(?:at|from)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/)){let h=+m[1];const ap=m[3];if(ap==='pm'&&h<12)h+=12;if(ap==='am'&&h===12)h=0;if(!ap&&h<8)h+=12;p.startTime=h*60+(+m[2]||0)}
+  DN.forEach((d,i)=>{if(new RegExp('\\b'+['sun','mon','tues?','wednes?|wed','thurs?','fri','sat'][i]+'(day)?\\b').test(s))p.day=i});
+  if(/tomorrow/.test(s)){p.day=(st.day+1)%7}
+  return p}
+async function aiParse(q){
+  try{
+    const sample=window.claude&&await claude.use('sample');if(!sample)throw 0;
+    const prompt=`You extract room-search constraints from a student's request. Today is ${DN[st.day]}, current time ${fmt(st.t)} (${st.t} minutes after midnight). Return ONLY JSON with keys:
+ac (true|false|null), floor (integer, 0=ground floor, 1=first floor... or null), type ("classroom"|"lab"|"hall"|null), minCapacity (integer or null; infer from team size if a number is stated), durationMin (integer minutes, default 60), startOffsetMin (minutes from now, default 0), startTime (minutes after midnight if an explicit clock time is given, else null), day (0=Sunday..6=Saturday if a day/tomorrow is given, else null).
+Request: ${JSON.stringify(q)}`;
+    const r=await sample.json(prompt,{modelTier:'quick'});
+    const base=localParse('');const o={...base};
+    if(typeof r.ac==='boolean')o.ac=r.ac;
+    if(Number.isInteger(r.floor)&&r.floor>=0&&r.floor<6)o.floor=r.floor;
+    if(['classroom','lab','hall'].includes(r.type))o.type=r.type;
+    if(Number.isFinite(r.minCapacity))o.minCapacity=r.minCapacity;
+    if(Number.isFinite(r.durationMin)&&r.durationMin>0)o.durationMin=Math.min(r.durationMin,600);
+    if(Number.isFinite(r.startOffsetMin))o.startOffsetMin=r.startOffsetMin;
+    if(Number.isFinite(r.startTime))o.startTime=r.startTime;
+    if(Number.isInteger(r.day)&&r.day>=0&&r.day<7)o.day=r.day;
+    o.src='AI';return o
+  }catch(e){const o=localParse(q);o.src='rules';return o}}
+async function ask(){
+  const q=$('q').value.trim();if(!q)return;
+  const out=$('ai-out');out.innerHTML='<p class="note">Analysing your request and the timetables…</p>';$('ask').disabled=true;
+  const p=await aiParse(q);$('ask').disabled=false;
+  const d=p.day!=null?p.day:st.day,s=p.startTime!=null?p.startTime:st.t+(p.startOffsetMin||0),e=s+p.durationMin;
+  const cand=Object.keys(META).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).filter(id=>{const m=META[id];
+    return(p.ac===null||m.ac==+p.ac)&&(p.floor===null||floorOf(id)===p.floor)&&(!p.type||m.type===p.type)&&(!p.minCapacity||m.cap>=p.minCapacity)})
+    .map(id=>({id,i:info(id,d,s,e)}));
+  const ok=cand.filter(x=>!x.i.busy&&x.i.until>=e);
+  st.hl=(d===st.day&&s===st.t)?new Set(ok.map(x=>x.id)):new Set();renderMap();
+  const chips=[DN[d]+' '+fmt(s)+' → '+fmt(e),(p.durationMin/60).toFixed(p.durationMin%60?1:0)+' h',
+    p.ac===null?null:p.ac?'AC':'Non-AC',p.floor===null?null:FLOORS[p.floor],p.type,p.minCapacity?'≥'+p.minCapacity+' seats':null].filter(Boolean);
+  let h=`<div class="chips">${chips.map(c=>`<span class="chip">${c}</span>`).join('')}<span class="chip">parsed by ${p.src}</span></div>`;
+  out.innerHTML=h+'<div id="ai-res"></div>';
+  const el=$('ai-res');
+  if(ok.length){
+    el.innerHTML=`<div class="msg">${ok.length} room${ok.length>1?'s':''} free for the whole slot (${fmt(s)}–${fmt(e)}):</div><div id="ai-f"></div>`;
+    renderFloors($('ai-f'),ok,x=>`<div class="note">Free for ${x.i.until===Infinity?'the rest of the day':Math.floor((x.i.until-s)/60)+'h '+(x.i.until-s)%60+'m from start'}</div>`);
+  }else{
+    const near=cand.filter(x=>!x.i.busy).sort((a,b)=>b.i.until-a.i.until).slice(0,5);
+    el.innerHTML=`<div class="msg">No room matches for the full ${p.durationMin} minutes.</div>`+(near.length?`<p class="note">Closest options (free for a shorter time):</p><div id="ai-f"></div>`:'<p class="note">Try relaxing the AC/floor requirement.</p>');
+    if(near.length)renderFloors($('ai-f'),near,x=>`<div class="note">Only ${x.i.until-s} min available</div>`)}}
+$('ask').onclick=ask;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')ask()});
+['AC room on the ground floor for me and my team for the next 2 hours','Non-AC classroom on the 2nd floor for 90 minutes','Lab on the ground floor tomorrow at 2 pm for 3 hours','Any room for 30 minutes'].forEach(t=>{
+  const b=document.createElement('button');b.className='ghost';b.textContent=t.length>42?t.slice(0,40)+'…':t;b.title=t;b.onclick=()=>{$('q').value='I need an '+t.replace(/^AC/,'AC');ask()};$('ex').append(b)});
+$('ex').firstChild.onclick=()=>{$('q').value='I need an AC room on the ground floor for me and my team for the next 2 hours.';ask()};
+setNow();renderAll();setInterval(tick,1000);
+</script></body></html>
